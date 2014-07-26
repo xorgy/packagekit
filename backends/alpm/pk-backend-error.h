@@ -20,7 +20,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-#include "pk-backend-job.h"
+
+#include <pk-backend.h>
 
 #define	 ALPM_ERROR		(alpm_error_quark ())
 
@@ -29,6 +30,6 @@ enum {
 	ALPM_ERR_PKG_HELD
 };
 
-void	 pk_backend_error	(PkBackendJob *self, GError *error);
+void	 pk_backend_error	(PkBackend *self, GError *error);
 
 GQuark	 alpm_error_quark	(void);

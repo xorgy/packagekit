@@ -22,10 +22,9 @@
  */
 
 #include <alpm.h>
-
+#include <pk-backend.h>
 #include <string.h>
 
-#include <packagekit-glib2/pk-package-id.h>
 #include "pk-backend-alpm.h"
 #include "pk-backend-databases.h"
 #include "pk-backend-error.h"
@@ -33,7 +32,7 @@
 #include "pk-backend-transaction.h"
 
 static gboolean
-pk_backend_transaction_sync_targets (PkBackendJob *self, GError **error)
+pk_backend_transaction_sync_targets (PkBackend *self, GError **error)
 {
 	gchar **packages;
 
@@ -82,7 +81,7 @@ pk_backend_transaction_sync_targets (PkBackendJob *self, GError **error)
 }
 
 static gboolean
-pk_backend_download_packages_thread (PkBackendJob *self)
+pk_backend_download_packages_thread (PkBackend *backend, PkBackendJob *self)
 {
 	alpm_list_t *cachedirs;
 	const gchar *directory;
@@ -122,7 +121,7 @@ pk_backend_download_packages_thread (PkBackendJob *self)
 }
 
 void
-pk_backend_download_packages (PkBackendJob *self, gchar **package_ids,
+pk_backend_download_packages (PkBackend *backend, PkBackendJob *self, gchar **package_ids,
 			      const gchar *directory)
 {
 	g_return_if_fail (self != NULL);
@@ -150,7 +149,7 @@ pk_backend_simulate_install_packages_thread (PkBackendJob *self)
 }
 
 static gboolean
-pk_backend_install_packages_thread (PkBackendJob *self)
+pk_backend_install_packages_thread (PkBackend *backend, PkBackendJob *self)
 {
 	gboolean only_trusted;
 	GError *error = NULL;
@@ -180,7 +179,7 @@ out:
 }
 
 void
-pk_backend_simulate_install_packages (PkBackendJob *self, gchar **package_ids)
+pk_backend_simulate_install_packages (PkBackend *backend, PkBackendJob *self,  PkBitfield transaction_flags, gchar **package_ids)
 {
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (package_ids != NULL);
@@ -190,8 +189,7 @@ pk_backend_simulate_install_packages (PkBackendJob *self, gchar **package_ids)
 }
 
 void
-pk_backend_install_packages (PkBackendJob *self, gboolean only_trusted,
-			     gchar **package_ids)
+pk_backend_install_packages (PkBackend *backend, PkBackendJob *self, /*gboolean only_trusted,*/ PkBitfield transaction_flags, gchar **package_ids)
 {
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (package_ids != NULL);
@@ -201,7 +199,7 @@ pk_backend_install_packages (PkBackendJob *self, gboolean only_trusted,
 }
 
 static gboolean
-pk_backend_replaces_dependencies (PkBackendJob *self, alpm_pkg_t *pkg)
+pk_backend_replaces_dependencies (PkBackend *self, alpm_pkg_t *pkg)
 {
 	const alpm_list_t *i, *replaces;
 
@@ -229,7 +227,7 @@ pk_backend_replaces_dependencies (PkBackendJob *self, alpm_pkg_t *pkg)
 }
 
 static gboolean
-pk_backend_update_packages_thread (PkBackendJob *self)
+pk_backend_update_packages_thread (PkBackend *backend, PkBackendJob *self)
 {
 	gboolean only_trusted;
 	const alpm_list_t *i;
@@ -293,7 +291,7 @@ out:
 }
 
 void
-pk_backend_simulate_update_packages (PkBackendJob *self, gchar **package_ids)
+pk_backend_simulate_update_packages (PkBackend *backend, PkBackendJob *self, PkBitfield transaction_flags, gchar **package_ids)
 {
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (package_ids != NULL);
@@ -303,7 +301,7 @@ pk_backend_simulate_update_packages (PkBackendJob *self, gchar **package_ids)
 }
 
 void
-pk_backend_update_packages (PkBackendJob *self, gboolean only_trusted,
+pk_backend_update_packages (PkBackend *backend, PkBackendJob *self, PkBitfield transaction_flags, /*gboolean only_trusted,*/
 			    gchar **package_ids)
 {
 	g_return_if_fail (self != NULL);

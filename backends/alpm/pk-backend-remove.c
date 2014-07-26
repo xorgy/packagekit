@@ -21,18 +21,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#include <alpm.h>
+#include <pk-backend.h>
 
 #include "pk-backend-alpm.h"
-#include <alpm.h>
-
-#include <packagekit-glib2/pk-package-id.h>
-
 #include "pk-backend-error.h"
 #include "pk-backend-remove.h"
 #include "pk-backend-transaction.h"
 
 static gboolean
-pk_backend_transaction_remove_targets (PkBackendJob *self, GError **error)
+pk_backend_transaction_remove_targets (PkBackend *self, GError **error)
 {
 	gchar **packages;
 
@@ -64,7 +62,7 @@ pk_backend_transaction_remove_targets (PkBackendJob *self, GError **error)
 }
 
 static gboolean
-pk_backend_transaction_remove_simulate (PkBackendJob *self, GError **error)
+pk_backend_transaction_remove_simulate (PkBackend *self, GError **error)
 {
 	const alpm_list_t *i;
 
@@ -89,7 +87,7 @@ pk_backend_transaction_remove_simulate (PkBackendJob *self, GError **error)
 }
 
 static gboolean
-pk_backend_simulate_remove_packages_thread (PkBackendJob *self)
+pk_backend_simulate_remove_packages_thread (PkBackend *backend, PkBackendJob *self)
 {
 	alpm_transflag_t flags = ALPM_TRANS_FLAG_CASCADE;
 	GError *error = NULL;
@@ -111,7 +109,7 @@ pk_backend_simulate_remove_packages_thread (PkBackendJob *self)
 }
 
 static gboolean
-pk_backend_remove_packages_thread (PkBackendJob *self)
+pk_backend_remove_packages_thread (PkBackend *backend, PkBackendJob *self)
 {
 	alpm_transflag_t flags = 0;
 	GError *error = NULL;
@@ -137,7 +135,7 @@ pk_backend_remove_packages_thread (PkBackendJob *self)
 }
 
 void
-pk_backend_simulate_remove_packages (PkBackendJob *self, gchar **package_ids,
+pk_backend_simulate_remove_packages (PkBackend *backend, PkBackendJob *self, PkBitfield transaction_flags, gchar **package_ids,
 				     gboolean autoremove)
 {
 	g_return_if_fail (self != NULL);
@@ -148,7 +146,7 @@ pk_backend_simulate_remove_packages (PkBackendJob *self, gchar **package_ids,
 }
 
 void
-pk_backend_remove_packages (PkBackendJob *self, gchar **package_ids,
+pk_backend_remove_packages (PkBackend *backend, PkBackendJob *self, PkBitfield transaction_flags, gchar **package_ids,
 			    gboolean allow_deps, gboolean autoremove)
 {
 	g_return_if_fail (self != NULL);

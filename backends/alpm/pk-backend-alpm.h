@@ -23,13 +23,10 @@
 
 #include <alpm.h>
 #include <gio/gio.h>
-#include <packagekit-glib2/pk-enum.h>
-/*#include "pk-backend.h"*/
-#include "pk-backend-job.h"
+#include <pk-backend.h>
+#include <pk-backend-job.h>
 
-
-
-extern PkBackendJob *backend;
+extern PkBackend *backend;
 extern GCancellable *cancellable;
 
 extern alpm_handle_t *alpm;
@@ -39,36 +36,14 @@ extern gchar *xfercmd;
 extern alpm_list_t *holdpkgs;
 extern alpm_list_t *syncfirsts;
 
-
 gint		 pk_backend_fetchcb	(const gchar *url, const gchar *path,
 					 gint force);
 
-void		 pk_backend_run		(PkBackendJob *self, PkStatusEnum status, PkBackendJobThreadFunc func);
+void		 pk_backend_run		(PkBackendJob *self, PkStatusEnum status,
+					 PkBackendJobThreadFunc func);
 
-void		pk_backend_cancel (PkBackendJob *backend, PkBackendJob *self);
+void		 pk_backend_cancel	(PkBackend *backend, PkBackendJob *self);
 
-gboolean	 pk_backend_cancelled	(PkBackendJob *self);
+gboolean	 pk_backend_cancelled	(PkBackend *self);
 
-gboolean	 pk_backend_finish	(PkBackendJob *self, GError *error);
-
-
-/*Britt Added*/
-
-const gchar* 		 pk_backend_get_description (PkBackendJob *self);
-
-const gchar*		 pk_backend_get_author (PkBackendJob *self);
-
-
-void		pk_backend_transaction_start(PkBackendJob *self);
-
-static void pk_backend_configure_environment (PkBackendJob *self);
-
-void pk_backend_initialize (GKeyFile *conf, PkBackendJob *self);
-
-static gboolean pk_backend_initialize_alpm (PkBackendJob *self, GError **error);
-
-void pk_backend_destroy (PkBackendJob *self);
-
-PkBitfield pk_backend_get_filters (PkBackendJob *self);
-
-gchar** pk_backend_get_mime_types (PkBackendJob *self);
+gboolean	 pk_backend_finish	(PkBackend *self, GError *error);

@@ -22,6 +22,7 @@
  */
 
 #include <alpm.h>
+#include <pk-backend.h>
 #include <string.h>
 
 #include "pk-backend-alpm.h"
@@ -280,7 +281,7 @@ alpm_pkg_is_local (alpm_pkg_t *pkg)
 }
 
 static void
-pk_backend_search_db (PkBackendJob *self, alpm_db_t *db, MatchFunc match,
+pk_backend_search_db (PkBackend *self, alpm_db_t *db, MatchFunc match,
 		      const alpm_list_t *patterns)
 {
 	const alpm_list_t *i, *j;
@@ -390,7 +391,7 @@ out:
 }
 
 void
-pk_backend_get_packages (PkBackendJob *self, PkBitfield filters)
+pk_backend_get_packages (PkBackend *backend, PkBackendJob *self, PkBitfield filters)
 {
 	g_return_if_fail (self != NULL);
 
@@ -402,7 +403,7 @@ pk_backend_get_packages (PkBackendJob *self, PkBitfield filters)
 }
 
 void
-pk_backend_search_details (PkBackendJob *self, PkBitfield filters, gchar **values)
+pk_backend_search_details (PkBackend *backend, PkBackendJob *self, PkBitfield filters, gchar **values)
 {
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (values != NULL);
@@ -412,7 +413,7 @@ pk_backend_search_details (PkBackendJob *self, PkBitfield filters, gchar **value
 }
 
 void
-pk_backend_search_files (PkBackendJob *self, PkBitfield filters, gchar **values)
+pk_backend_search_files (PkBackend *backend, PkBackendJob *self, PkBitfield filters, gchar **values)
 {
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (values != NULL);
@@ -426,7 +427,7 @@ pk_backend_search_files (PkBackendJob *self, PkBitfield filters, gchar **values)
 }
 
 void
-pk_backend_search_groups (PkBackendJob *self, PkBitfield filters, gchar **values)
+pk_backend_search_groups (PkBackend *backend, PkBackendJob *self, PkBitfield filters, gchar **values)
 {
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (values != NULL);
@@ -436,7 +437,7 @@ pk_backend_search_groups (PkBackendJob *self, PkBitfield filters, gchar **values
 }
 
 void
-pk_backend_search_names (PkBackendJob *self, PkBitfield filters, gchar **values)
+pk_backend_search_names (PkBackend *backend, PkBackendJob *self, PkBitfield filters, gchar **values)
 {
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (values != NULL);
@@ -446,7 +447,7 @@ pk_backend_search_names (PkBackendJob *self, PkBitfield filters, gchar **values)
 }
 
 void
-pk_backend_what_provides (PkBackendJob *self, PkBitfield filters, gchar **values)
+pk_backend_what_provides (PkBackend *backend, PkBackendJob *self, PkBitfield filters, gchar **values)
 {
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (values != NULL);

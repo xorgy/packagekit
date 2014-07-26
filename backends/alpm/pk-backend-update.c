@@ -21,10 +21,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-
 #include <alpm.h>
 #include <glib/gstdio.h>
-
+#include <pk-backend.h>
 #include <string.h>
 #include <sys/stat.h>
 
@@ -146,7 +145,7 @@ alpm_time_to_iso8601 (alpm_time_t time)
 }
 
 static gboolean
-pk_backend_get_update_detail_thread (PkBackendJob *self)
+pk_backend_get_update_detail_thread (PkBackend *backend, PkBackendJob *self)
 {
 	gchar **packages;
 	GError *error = NULL;
@@ -228,7 +227,7 @@ pk_backend_get_update_detail_thread (PkBackendJob *self)
 			updated = NULL;
 		}
 
-		pk_backend_job_update_detail (self, *packages, upgrades,
+		pk_backend_update_detail (self, *packages, upgrades,
 					      replaces, urls, NULL, NULL,
 					      restart, reason, NULL, state,
 					      issued, updated);
@@ -245,7 +244,7 @@ pk_backend_get_update_detail_thread (PkBackendJob *self)
 }
 
 void
-pk_backend_get_update_detail (PkBackendJob *self, gchar **package_ids)
+pk_backend_get_update_detail (PkBackend *backend, PkBackendJob *self, gchar **package_ids)
 {
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (package_ids != NULL);
@@ -255,7 +254,7 @@ pk_backend_get_update_detail (PkBackendJob *self, gchar **package_ids)
 }
 
 static gboolean
-pk_backend_update_databases (PkBackendJob *self, gint force, GError **error) {
+pk_backend_update_databases (PkBackend *self, gint force, GError **error) {
 	alpm_cb_download dlcb;
 	alpm_cb_totaldl totaldlcb;
 	const alpm_list_t *i;
@@ -389,7 +388,7 @@ alpm_pkg_find_update (alpm_pkg_t *pkg, const alpm_list_t *dbs)
 }
 
 static gboolean
-pk_backend_get_updates_thread (PkBackendJob *self)
+pk_backend_get_updates_thread (PkBackend *backend, PkBackendJob *self)
 {
 	struct stat cache;
 	time_t one_hour_ago;
@@ -440,7 +439,7 @@ pk_backend_get_updates_thread (PkBackendJob *self)
 }
 
 void
-pk_backend_get_updates (PkBackendJob *self, PkBitfield filters)
+pk_backend_get_updates (PkBackend *backend, PkBackendJob *self, PkBitfield filters)
 {
 	g_return_if_fail (self != NULL);
 
@@ -449,7 +448,7 @@ pk_backend_get_updates (PkBackendJob *self, PkBitfield filters)
 }
 
 static gboolean
-pk_backend_refresh_cache_thread (PkBackendJob *self)
+pk_backend_refresh_cache_thread (PkBackend *backend, PkBackendJob *self)
 {
 	gint force;
 	GError *error = NULL;
@@ -464,11 +463,10 @@ pk_backend_refresh_cache_thread (PkBackendJob *self)
 }
 
 void
-pk_backend_refresh_cache (PkBackendJob *self, gboolean force)
+pk_backend_refresh_cache (PkBackend *backend, PkBackendJob *self, gboolean force)
 {
 	g_return_if_fail (self != NULL);
 
 	pk_backend_run (self, PK_STATUS_ENUM_SETUP,
 			pk_backend_refresh_cache_thread);
 }
-

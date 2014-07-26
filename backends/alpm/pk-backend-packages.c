@@ -22,7 +22,6 @@
  */
 
 #include "pk-backend-alpm.h"
-#include <packagekit-glib2/pk-package.c>
 #include "pk-backend-error.h"
 #include "pk-backend-groups.h"
 #include "pk-backend-packages.h"
@@ -53,7 +52,7 @@ alpm_pkg_build_id (alpm_pkg_t *pkg)
 }
 
 void
-pk_backend_pkg (PkBackendJob *self, alpm_pkg_t *pkg, PkInfoEnum info)
+pk_backend_pkg (PkBackend *self, alpm_pkg_t *pkg, PkInfoEnum info)
 {
 	gchar *package;
 
@@ -61,12 +60,12 @@ pk_backend_pkg (PkBackendJob *self, alpm_pkg_t *pkg, PkInfoEnum info)
 	g_return_if_fail (pkg != NULL);
 
 	package = alpm_pkg_build_id (pkg);
-	pk_backend_job_package (self, info, package, alpm_pkg_get_desc (pkg));
+	pk_backend_package (self, info, package, alpm_pkg_get_desc (pkg));
 	g_free (package);
 }
 
 alpm_pkg_t *
-pk_backend_find_pkg (PkBackendJob *self, const gchar *package_id, GError **error)
+pk_backend_find_pkg (PkBackend *self, const gchar *package_id, GError **error)
 {
 	gchar **package;
 	const gchar *repo_id;
@@ -119,7 +118,7 @@ pk_backend_find_pkg (PkBackendJob *self, const gchar *package_id, GError **error
 }
 
 static gboolean
-pk_backend_resolve_package (PkBackendJob *self, const gchar *package,
+pk_backend_resolve_package (PkBackend *self, const gchar *package,
 			    GError **error)
 {
 	alpm_pkg_t *pkg;
@@ -155,7 +154,7 @@ pk_backend_resolve_package (PkBackendJob *self, const gchar *package,
 }
 
 static gboolean
-pk_backend_resolve_name (PkBackendJob *self, const gchar *name, GError **error)
+pk_backend_resolve_name (PkBackend *self, const gchar *name, GError **error)
 {
 	alpm_pkg_t *pkg;
 	int code;
@@ -232,7 +231,7 @@ pk_backend_resolve_thread (PkBackendJob *self)
 }
 
 void
-pk_backend_resolve (PkBackendJob *self, PkBitfield filters, gchar **package_ids)
+pk_backend_resolve (PkBackend *backend, PkBackendJob *self, PkBitfield filters, gchar **package_ids)
 {
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (package_ids != NULL);
@@ -294,7 +293,7 @@ pk_backend_get_details_thread (PkBackendJob *self)
 			size = alpm_pkg_download_size (pkg);
 		}
 
-		pk_backend_job_details (self, *packages, NULL, licenses->str, group, desc, url, size);
+		pk_backend_details (self, *packages, NULL, licenses->str, group, desc, url, size);
 		g_string_free (licenses, TRUE);
 	}
 
@@ -302,7 +301,7 @@ pk_backend_get_details_thread (PkBackendJob *self)
 }
 
 void
-pk_backend_get_details (PkBackendJob *self, gchar **package_ids)
+pk_backend_get_details (PkBackend *backend, PkBackendJob *self, gchar **package_ids)
 {
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (package_ids != NULL);
@@ -351,7 +350,7 @@ pk_backend_get_files_thread (PkBackendJob *self)
 		}
 
 		g_string_truncate (files, MAX (files->len, 1) - 1);
-		pk_backend_job_files (self, *packages, files->str);
+		pk_backend_files (self, *packages, files->str);
 		g_string_free (files, TRUE);
 	}
 
@@ -359,7 +358,7 @@ pk_backend_get_files_thread (PkBackendJob *self)
 }
 
 void
-pk_backend_get_files (PkBackendJob *self, gchar **package_ids)
+pk_backend_get_files (PkBackend *backend, PkBackendJob *self, gchar **package_ids)
 {
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (package_ids != NULL);

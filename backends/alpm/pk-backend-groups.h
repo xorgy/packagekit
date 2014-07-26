@@ -22,11 +22,11 @@
  */
 
 #include <alpm.h>
-#include "pk-backend-job.h"
+#include <pk-backend.h>
 
-gboolean	 pk_backend_initialize_groups	(PkBackendJob *self,
+gboolean	 pk_backend_initialize_groups	(PkBackend *self,
 						 GError **error);
 
-void		 pk_backend_destroy_groups	(PkBackendJob *self);
+void		 pk_backend_destroy_groups	(PkBackend *self);
 
 const gchar	*alpm_pkg_get_group		(alpm_pkg_t *pkg);

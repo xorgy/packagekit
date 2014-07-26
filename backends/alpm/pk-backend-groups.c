@@ -21,7 +21,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "pk-backend-alpm.h"
 #include <gio/gio.h>
 #include <string.h>
 
@@ -106,7 +105,7 @@ group_map_new (GError **error)
 }
 
 gboolean
-pk_backend_initialize_groups (PkBackendJob *self, GError **error)
+pk_backend_initialize_groups (PkBackend *self, GError **error)
 {
 	g_return_val_if_fail (self != NULL, FALSE);
 
@@ -116,7 +115,7 @@ pk_backend_initialize_groups (PkBackendJob *self, GError **error)
 }
 
 void
-pk_backend_destroy_groups (PkBackendJob *self)
+pk_backend_destroy_groups (PkBackend *self)
 {
 	g_return_if_fail (self != NULL);
 
@@ -146,7 +145,7 @@ alpm_pkg_get_group (alpm_pkg_t *pkg)
 }
 
 PkBitfield
-pk_backend_get_groups (PkBackendJob *self)
+pk_backend_get_groups (PkBackend *self)
 {
 	g_return_val_if_fail (self != NULL, 0);
 

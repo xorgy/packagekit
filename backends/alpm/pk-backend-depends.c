@@ -21,9 +21,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "pk-backend-alpm.h"
 #include <alpm.h>
+#include <pk-backend.h>
 
+#include "pk-backend-alpm.h"
 #include "pk-backend-depends.h"
 #include "pk-backend-error.h"
 #include "pk-backend-packages.h"
@@ -43,7 +44,7 @@ alpm_list_find_pkg (const alpm_list_t *pkgs, const gchar *name)
 }
 
 static alpm_list_t *
-pk_backend_find_provider (PkBackendJob *self, alpm_list_t *pkgs,
+pk_backend_find_provider (PkBackend *self, alpm_list_t *pkgs,
 			  const gchar *depend, GError **error)
 {
 	PkBitfield filters;
@@ -105,7 +106,7 @@ pk_backend_find_provider (PkBackendJob *self, alpm_list_t *pkgs,
 }
 
 static alpm_list_t *
-pk_backend_find_requirer (PkBackendJob *self, alpm_list_t *pkgs, const gchar *name,
+pk_backend_find_requirer (PkBackend *self, alpm_list_t *pkgs, const gchar *name,
 			  GError **error)
 {
 	alpm_pkg_t *requirer;
@@ -136,7 +137,7 @@ pk_backend_find_requirer (PkBackendJob *self, alpm_list_t *pkgs, const gchar *na
 }
 
 static gboolean
-pk_backend_depends_on_thread (PkBackendJob *self)
+pk_backend_depends_on_thread (PkBackend *self)
 {
 	gchar **packages;
 	alpm_list_t *i, *pkgs = NULL;
@@ -192,7 +193,7 @@ pk_backend_depends_on_thread (PkBackendJob *self)
 }
 
 static gboolean
-pk_backend_required_by_thread (PkBackendJob *self)
+pk_backend_required_by_thread (PkBackend *backend, PkBackendJob *self)
 {
 	gchar **packages;
 	alpm_list_t *i, *pkgs = NULL;
@@ -247,7 +248,7 @@ pk_backend_required_by_thread (PkBackendJob *self)
 }
 
 void
-pk_backend_depends_on (PkBackendJob *self, PkBitfield filters,
+pk_backend_depends_on (PkBackend *backend, PkBackendJob *self, PkBitfield filters,
 			gchar **package_ids, gboolean recursive)
 {
 	g_return_if_fail (self != NULL);
@@ -258,7 +259,7 @@ pk_backend_depends_on (PkBackendJob *self, PkBitfield filters,
 }
 
 void
-pk_backend_required_by (PkBackendJob *self, PkBitfield filters,
+pk_backend_required_by (PkBackend *backend, PkBackendJob *self, PkBitfield filters,
 			 gchar **package_ids, gboolean recursive)
 {
 	g_return_if_fail (self != NULL);

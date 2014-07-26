@@ -20,9 +20,9 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-#include "pk-backend-alpm.h"
 
 #include <alpm.h>
+#include <pk-backend.h>
 
 #include "pk-backend-alpm.h"
 #include "pk-backend-databases.h"
@@ -54,7 +54,7 @@ alpm_add_file (const gchar *filename)
 }
 
 static gboolean
-pk_backend_transaction_add_targets (PkBackendJob *self, GError **error)
+pk_backend_transaction_add_targets (PkBackend *self, GError **error)
 {
 	gchar **paths;
 
@@ -134,7 +134,7 @@ pk_backend_simulate_install_files (PkBackendJob *self, gchar **paths)
 }
 
 void
-pk_backend_install_files (PkBackendJob *self, gboolean only_trusted,
+pk_backend_install_files (PkBackend *backend, PkBackendJob *self, /*gboolean only_trusted*/ PkBitfield transaction_flags,
 			  gchar **full_paths)
 {
 	g_return_if_fail (self != NULL);

@@ -21,13 +21,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "pk-backend-alpm.h"
 #include <alpm.h>
 
 #include "pk-backend-error.h"
 
 void
-pk_backend_error (PkBackendJob *self, GError *error)
+pk_backend_error (PkBackend *self, GError *error)
 {
 	PkErrorEnum code = PK_ERROR_ENUM_UNKNOWN;
 
@@ -35,7 +34,7 @@ pk_backend_error (PkBackendJob *self, GError *error)
 	g_return_if_fail (error != NULL);
 
 	if (error->domain != ALPM_ERROR) {
-		pk_backend_job_error_code (self, code, "%s", error->message);
+		pk_backend_error_code (self, code, "%s", error->message);
 		return;
 	}
 
@@ -189,7 +188,7 @@ pk_backend_error (PkBackendJob *self, GError *error)
 			break;
 	}
 
-	pk_backend_job_error_code (self, code, "%s", error->message);
+	pk_backend_error_code (self, code, "%s", error->message);
 }
 
 GQuark
