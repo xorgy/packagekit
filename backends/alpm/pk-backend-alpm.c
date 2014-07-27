@@ -64,7 +64,7 @@ pk_backend_get_author (PkBackend *self)
 }
 
 static gboolean
-pk_backend_spawn (PkBackend *self, const gchar *command)
+pk_backend_spawn (PkBackendJob *self, const gchar *command)
 {
 	int status;
 	GError *error = NULL;
@@ -201,7 +201,7 @@ pk_backend_logcb (alpm_loglevel_t level, const gchar *format, va_list args)
 }
 
 static void
-pk_backend_configure_environment (PkBackend *self)
+pk_backend_configure_environment (PkBackendJob *self)
 {
 	struct utsname un;
 	gchar *value;
@@ -218,13 +218,13 @@ pk_backend_configure_environment (PkBackend *self)
 	g_setenv ("HTTP_USER_AGENT", value, FALSE);
 	g_free (value);
 
-	value = pk_backend_get_locale (self);
+	value = pk_backend_job_get_locale (self);
 	if (value != NULL) {
 		setlocale (LC_ALL, value);
 		g_free (value);
 	}
 
-	value = pk_backend_get_proxy_http (self);
+	value = pk_backend_job_get_proxy_http (self);
 	if (value != NULL) {
 		gchar *uri = pk_backend_spawn_convert_uri (value);
 		g_setenv ("http_proxy", uri, TRUE);
@@ -232,7 +232,7 @@ pk_backend_configure_environment (PkBackend *self)
 		g_free (value);
 	}
 
-	value = pk_backend_get_proxy_https (self);
+	value = pk_backend_job_get_proxy_https (self);
 	if (value != NULL) {
 		gchar *uri = pk_backend_spawn_convert_uri (value);
 		g_setenv ("https_proxy", uri, TRUE);
@@ -240,7 +240,7 @@ pk_backend_configure_environment (PkBackend *self)
 		g_free (value);
 	}
 
-	value = pk_backend_get_proxy_ftp (self);
+	value = pk_backend_job_get_proxy_ftp (self);
 	if (value != NULL) {
 		gchar *uri = pk_backend_spawn_convert_uri (value);
 		g_setenv ("ftp_proxy", uri, TRUE);
@@ -248,7 +248,7 @@ pk_backend_configure_environment (PkBackend *self)
 		g_free (value);
 	}
 
-	value = pk_backend_get_proxy_socks (self);
+	value = pk_backend_job_get_proxy_socks (self);
 	if (value != NULL) {
 		gchar *uri = pk_backend_spawn_convert_uri (value);
 		g_setenv ("socks_proxy", uri, TRUE);
@@ -256,13 +256,13 @@ pk_backend_configure_environment (PkBackend *self)
 		g_free (value);
 	}
 
-	value = pk_backend_get_no_proxy (self);
+	value = pk_backend_job_get_no_proxy (self);
 	if (value != NULL) {
 		g_setenv ("no_proxy", value, TRUE);
 		g_free (value);
 	}
 
-	value = pk_backend_get_pac (self);
+	value = pk_backend_job_get_pac (self);
 	if (value != NULL) {
 		gchar *uri = pk_backend_spawn_convert_uri (value);
 		g_setenv ("pac", uri, TRUE);
@@ -272,7 +272,7 @@ pk_backend_configure_environment (PkBackend *self)
 }
 
 static gboolean
-pk_backend_initialize_alpm (PkBackend *self, GError **error)
+pk_backend_initialize_alpm (PkBackendJob *self, GError **error)
 {
 	g_return_val_if_fail (self != NULL, FALSE);
 
@@ -297,7 +297,7 @@ pk_backend_initialize_alpm (PkBackend *self, GError **error)
 }
 
 static void
-pk_backend_destroy_alpm (PkBackend *self)
+pk_backend_destroy_alpm (PkBackendJob *self)
 {
 	g_return_if_fail (self != NULL);
 
@@ -447,7 +447,7 @@ pk_backend_finish (PkBackendJob *self, GError *error)
 }
 
 void
-pk_backend_transaction_start (PkBackend *self)
+pk_backend_transaction_start (PkBackendJob *self)
 {
 	g_return_if_fail (self != NULL);
 
