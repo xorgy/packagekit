@@ -26,7 +26,7 @@
 #include "pk-backend-error.h"
 
 void
-pk_backend_error (PkBackend *self, GError *error)
+pk_backend_error (PkBackendJob *self, GError *error)
 {
 	PkErrorEnum code = PK_ERROR_ENUM_UNKNOWN;
 
@@ -188,7 +188,7 @@ pk_backend_error (PkBackend *self, GError *error)
 			break;
 	}
 
-	pk_backend_error_code (self, code, "%s", error->message);
+	pk_backend_job_error_code (self, code, "%s", error->message);
 }
 
 GQuark

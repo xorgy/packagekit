@@ -227,7 +227,7 @@ pk_backend_get_update_detail_thread (PkBackend *backend, PkBackendJob *self)
 			updated = NULL;
 		}
 
-		pk_backend_update_detail (self, *packages, upgrades,
+		pk_backend_job_update_detail (self, *packages, upgrades,
 					      replaces, urls, NULL, NULL,
 					      restart, reason, NULL, state,
 					      issued, updated);
@@ -267,7 +267,7 @@ pk_backend_update_databases (PkBackend *self, gint force, GError **error) {
 	}
 
 	alpm_logaction (alpm, PK_LOG_PREFIX, "synchronizing package lists\n");
-	pk_backend_set_status (self, PK_STATUS_ENUM_DOWNLOAD_PACKAGELIST);
+	pk_backend_job_set_status (self, PK_STATUS_ENUM_DOWNLOAD_PACKAGELIST);
 
 	dlcb = alpm_option_get_dlcb (alpm);
 	totaldlcb = alpm_option_get_totaldlcb (alpm);

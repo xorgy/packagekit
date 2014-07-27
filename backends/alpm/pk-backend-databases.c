@@ -243,8 +243,8 @@ pk_backend_destroy_databases (PkBackend *self)
 	alpm_list_free (configured);
 }
 
-static gboolean
-pk_backend_repo_info (PkBackend *self, const gchar *repo, gboolean enabled)
+static void /*instead of boolean*/
+pk_backend_repo_info (PkBackendJob *self, const gchar *repo, gboolean enabled)
 {
 	gchar *description;
 	gboolean result;
@@ -252,15 +252,17 @@ pk_backend_repo_info (PkBackend *self, const gchar *repo, gboolean enabled)
 	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (repo != NULL, FALSE);
 
-	description = g_strdup_printf ("[%s]", repo);
-	result = pk_backend_repo_detail (self, repo, description, enabled);
+	description = g_strdup_printf ("[%s]", repo); /*took out "result = */
+
+	pk_backend_job_repo_detail (self, repo, description, enabled);
+
 	g_free (description);
 
-	return result;
+	/*removed return result; */
 }
 
 static void
-pk_backend_get_repo_list_thread (PkBackend *backend, PkBackendJob *self, gpointer data)
+pk_backend_get_repo_list_thread (PkBackendJob *self, GVariant *params, gpointer data)
 {
 	const alpm_list_t *i;
 	GHashTableIter iter;
@@ -339,7 +341,7 @@ pk_backend_repo_enable_thread (PkBackendJob *self, GVariant *params, gpointer da
 		g_error_free (error);
 	}
 
-	pk_backend_finished (self);
+	pk_backend_job_finished (self);
 }
 
 static void
@@ -387,7 +389,7 @@ pk_backend_repo_disable_thread (PkBackendJob *self, GVariant *params, gpointer d
 		g_error_free (error);
 	}
 
-	pk_backend_finished (self);
+	pk_backend_job_finished (self);
 }
 
 void
@@ -396,7 +398,7 @@ pk_backend_repo_enable (PkBackend *backend, PkBackendJob *self, const gchar *rep
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (repo_id != NULL);
 
-	pk_backend_set_status (self, PK_STATUS_ENUM_QUERY);
+	pk_backend_job_set_status (self, PK_STATUS_ENUM_QUERY);
 
 	if (enabled) {
 		pk_backend_job_thread_create (self, pk_backend_repo_enable_thread, NULL, NULL);

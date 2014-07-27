@@ -36,7 +36,7 @@ static alpm_pkg_t *tpkg = NULL;
 static GString *toutput = NULL;
 
 static gchar *
-pk_backend_resolve_path (PkBackend *self, const gchar *basename)
+pk_backend_resolve_path (PkBackendJob *self, const gchar *basename)
 {
 	const gchar *dirname;
 
@@ -79,7 +79,7 @@ alpm_pkg_has_basename (alpm_pkg_t *pkg, const gchar *basename)
 }
 
 static void
-pk_backend_transaction_download_end (PkBackend *self)
+pk_backend_transaction_download_end (PkBackendJob *self)
 {
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (dpkg != NULL);
@@ -92,7 +92,7 @@ pk_backend_transaction_download_end (PkBackend *self)
 
 		package_id = alpm_pkg_build_id (dpkg);
 
-		pk_backend_files (self, package_id, dfiles->str);
+		pk_backend_job_files (self, package_id, dfiles->str);
 
 		g_free (package_id);
 		g_string_free (dfiles, TRUE);
@@ -103,7 +103,7 @@ pk_backend_transaction_download_end (PkBackend *self)
 }
 
 static void
-pk_backend_transaction_download_start (PkBackend *self, const gchar *basename)
+pk_backend_transaction_download_start (PkBackendJob *self, const gchar *basename)
 {
 	gchar *path;
 	const alpm_list_t *i;
@@ -145,7 +145,7 @@ pk_backend_transaction_download_start (PkBackend *self, const gchar *basename)
 	pk_backend_pkg (self, dpkg, PK_INFO_ENUM_DOWNLOADING);
 
 	/* start collecting files for the new package */
-	if (pk_backend_get_role (self) == PK_ROLE_ENUM_DOWNLOAD_PACKAGES) {
+	if (pk_backend_job_get_role (self) == PK_ROLE_ENUM_DOWNLOAD_PACKAGES) {
 		path = pk_backend_resolve_path (self, basename);
 		dfiles = g_string_new (path);
 		g_free (path);
@@ -166,13 +166,13 @@ pk_backend_transaction_totaldlcb (off_t total)
 }
 
 static void
-pk_backend_transaction_dlcb (const gchar *basename, off_t complete, off_t total)
+pk_backend_transaction_dlcb (PkBackendJob *self, const gchar *basename, off_t complete, off_t total)
 {
 	guint percentage = 100, sub_percentage = 100;
 
 	g_return_if_fail (basename != NULL);
 	g_return_if_fail (complete <= total);
-	g_return_if_fail (backend != NULL);
+	g_return_if_fail (self != NULL);
 
 	if (total > 0) {
 		sub_percentage = complete * 100 / total;
@@ -193,18 +193,18 @@ pk_backend_transaction_dlcb (const gchar *basename, off_t complete, off_t total)
 
 	if (complete == 0) {
 		g_debug ("downloading file %s", basename);
-		pk_backend_set_status (backend, PK_STATUS_ENUM_DOWNLOAD);
-		pk_backend_transaction_download_start (backend, basename);
+		pk_backend_job_set_status (self, PK_STATUS_ENUM_DOWNLOAD);
+		pk_backend_transaction_download_start (self, basename);
 	} else if (complete == total) {
 		dcomplete += complete;
 	}
 
-	pk_backend_set_sub_percentage (backend, sub_percentage);
-	pk_backend_set_percentage (backend, percentage);
+	pk_backend_set_sub_percentage (self, sub_percentage);
+	pk_backend_job_set_percentage (self, percentage);
 }
 
 static void
-pk_backend_transaction_progress_cb (alpm_progress_t type, const gchar *target,
+pk_backend_transaction_progress_cb (PkBackendJob *self, alpm_progress_t type, const gchar *target,
 				    gint percent, gsize targets, gsize current)
 {
 	static gint recent = 101;
@@ -247,8 +247,8 @@ pk_backend_transaction_progress_cb (alpm_progress_t type, const gchar *target,
 				break;
 			}
 
-			pk_backend_set_sub_percentage (backend, percent);
-			pk_backend_set_percentage (backend, overall / targets);
+			pk_backend_set_sub_percentage (self, percent);
+			pk_backend_job_set_percentage (self, overall / targets);
 			recent = percent;
 
 			g_debug ("%d%% of %s complete (%zu of %zu)", percent,
@@ -262,7 +262,7 @@ pk_backend_transaction_progress_cb (alpm_progress_t type, const gchar *target,
 }
 
 static void
-pk_backend_install_ignorepkg (PkBackend *self, alpm_pkg_t *pkg, gint *result)
+pk_backend_install_ignorepkg (PkBackendJob *self, alpm_pkg_t *pkg, gint *result)
 {
 	gchar *output;
 
@@ -270,12 +270,13 @@ pk_backend_install_ignorepkg (PkBackend *self, alpm_pkg_t *pkg, gint *result)
 	g_return_if_fail (pkg != NULL);
 	g_return_if_fail (result != NULL);
 
-	switch (pk_backend_get_role (self)) {
+	switch (pk_backend_job_get_role (self)) {
 		case PK_ROLE_ENUM_INSTALL_PACKAGES:
 			output = g_strdup_printf ("%s: was not ignored\n",
 						  alpm_pkg_get_name (pkg));
 			pk_backend_output (self, output);
 			g_free (output);
+			break;
 
 		case PK_ROLE_ENUM_DOWNLOAD_PACKAGES:
 		/*case PK_ROLE_ENUM_SIMULATE_INSTALL_PACKAGES:
@@ -289,7 +290,7 @@ pk_backend_install_ignorepkg (PkBackend *self, alpm_pkg_t *pkg, gint *result)
 }
 
 static void
-pk_backend_select_provider (PkBackend *self, const alpm_list_t *providers,
+pk_backend_select_provider (PkBackendJob *self, const alpm_list_t *providers,
 		            alpm_depend_t *depend)
 {
 	gchar *output;
@@ -346,7 +347,7 @@ pk_backend_transaction_conv_cb (alpm_question_t question, gpointer data1,
 }
 
 static void
-pk_backend_output_end (PkBackend *self)
+pk_backend_output_end (PkBackendJob *self)
 {
 	g_return_if_fail (self != NULL);
 
@@ -360,7 +361,7 @@ pk_backend_output_end (PkBackend *self)
 }
 
 static void
-pk_backend_output_start (PkBackend *self, alpm_pkg_t *pkg)
+pk_backend_output_start (PkBackendJob *self, alpm_pkg_t *pkg)
 {
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (pkg != NULL);
@@ -373,7 +374,7 @@ pk_backend_output_start (PkBackend *self, alpm_pkg_t *pkg)
 }
 
 void
-pk_backend_output (PkBackend *self, const gchar *output)
+pk_backend_output (PkBackendJob *self, const gchar *output)
 {
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (output != NULL);
@@ -390,7 +391,7 @@ pk_backend_output (PkBackend *self, const gchar *output)
 }
 
 /*static void
-pk_backend_output_once (PkBackend *self, alpm_pkg_t *pkg, const gchar *output)
+pk_backend_output_once (PkBackendJob *self, alpm_pkg_t *pkg, const gchar *output)
 {
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (pkg != NULL);
@@ -401,34 +402,34 @@ pk_backend_output_once (PkBackend *self, alpm_pkg_t *pkg, const gchar *output)
 }*/
 
 static void
-pk_backend_transaction_dep_resolve (PkBackend *self)
+pk_backend_transaction_dep_resolve (PkBackendJob *self)
 {
 	g_return_if_fail (self != NULL);
 
-	pk_backend_set_status (self, PK_STATUS_ENUM_DEP_RESOLVE);
+	pk_backend_job_set_status (self, PK_STATUS_ENUM_DEP_RESOLVE);
 }
 
 static void
-pk_backend_transaction_test_commit (PkBackend *self)
+pk_backend_transaction_test_commit (PkBackendJob *self)
 {
 	g_return_if_fail (self != NULL);
 
-	pk_backend_set_status (self, PK_STATUS_ENUM_TEST_COMMIT);
+	pk_backend_job_set_status (self, PK_STATUS_ENUM_TEST_COMMIT);
 }
 
 static void
-pk_backend_transaction_add_start (PkBackend *self, alpm_pkg_t *pkg)
+pk_backend_transaction_add_start (PkBackendJob *self, alpm_pkg_t *pkg)
 {
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (pkg != NULL);
 
-	pk_backend_set_status (self, PK_STATUS_ENUM_INSTALL);
+	pk_backend_job_set_status (self, PK_STATUS_ENUM_INSTALL);
 	pk_backend_pkg (self, pkg, PK_INFO_ENUM_INSTALLING);
 	pk_backend_output_fstart (self, pkg);
 }
 
 static void
-pk_backend_transaction_add_done (PkBackend *self, alpm_pkg_t *pkg)
+pk_backend_transaction_add_done (PkBackendJob *self, alpm_pkg_t *pkg)
 {
 	const gchar *name, *version;
 	const alpm_list_t *i, *optdepends;
@@ -461,18 +462,18 @@ pk_backend_transaction_add_done (PkBackend *self, alpm_pkg_t *pkg)
 }
 
 static void
-pk_backend_transaction_remove_start (PkBackend *self, alpm_pkg_t *pkg)
+pk_backend_transaction_remove_start (PkBackendJob *self, alpm_pkg_t *pkg)
 {
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (pkg != NULL);
 
-	pk_backend_set_status (self, PK_STATUS_ENUM_REMOVE);
+	pk_backend_job_set_status (self, PK_STATUS_ENUM_REMOVE);
 	pk_backend_pkg (self, pkg, PK_INFO_ENUM_REMOVING);
 	pk_backend_output_start (self, pkg);
 }
 
 static void
-pk_backend_transaction_remove_done (PkBackend *self, alpm_pkg_t *pkg)
+pk_backend_transaction_remove_done (PkBackendJob *self, alpm_pkg_t *pkg)
 {
 	const gchar *name, *version;
 
@@ -490,7 +491,7 @@ pk_backend_transaction_remove_done (PkBackend *self, alpm_pkg_t *pkg)
 }
 
 static void
-pk_backend_transaction_upgrade_start (PkBackend *self, alpm_pkg_t *pkg,
+pk_backend_transaction_upgrade_start (PkBackendJob *self, alpm_pkg_t *pkg,
 				      alpm_pkg_t *old)
 {
 	PkRoleEnum role;
@@ -500,7 +501,7 @@ pk_backend_transaction_upgrade_start (PkBackend *self, alpm_pkg_t *pkg,
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (pkg != NULL);
 
-	role = pk_backend_get_role (self);
+	role = pk_backend_job_get_role (self);
 	if (role == PK_ROLE_ENUM_INSTALL_FILES /*||
 	    role == PK_ROLE_ENUM_SIMULATE_INSTALL_FILES*/) {
 		state = PK_STATUS_ENUM_INSTALL;
@@ -510,7 +511,7 @@ pk_backend_transaction_upgrade_start (PkBackend *self, alpm_pkg_t *pkg,
 		info = PK_INFO_ENUM_UPDATING;
 	}
 
-	pk_backend_set_status (self, state);
+	pk_backend_job_set_status (self, state);
 	pk_backend_pkg (self, pkg, info);
 	pk_backend_output_start (self, pkg);
 }
@@ -540,7 +541,7 @@ alpm_depend_compare (gconstpointer a, gconstpointer b)
 }
 
 static void
-pk_backend_transaction_process_new_optdepends (PkBackend *self, alpm_pkg_t *pkg,
+pk_backend_transaction_process_new_optdepends (PkBackendJob *self, alpm_pkg_t *pkg,
 					       alpm_pkg_t *old)
 {
 	alpm_list_t *optdepends;
@@ -572,7 +573,7 @@ pk_backend_transaction_process_new_optdepends (PkBackend *self, alpm_pkg_t *pkg,
 }
 
 static void
-pk_backend_transaction_upgrade_done (PkBackend *self, alpm_pkg_t *pkg,
+pk_backend_transaction_upgrade_done (PkBackendJob *self, alpm_pkg_t *pkg,
 				     alpm_pkg_t *old, gint direction)
 {
 	const gchar *name, *pre, *post;
@@ -607,35 +608,35 @@ pk_backend_transaction_upgrade_done (PkBackend *self, alpm_pkg_t *pkg,
 }
 
 static void
-pk_backend_transaction_sig_check (PkBackend *self)
+pk_backend_transaction_sig_check (PkBackendJob *self)
 {
 	g_return_if_fail (self != NULL);
 
-	pk_backend_set_status (self, PK_STATUS_ENUM_SIG_CHECK);
+	pk_backend_job_set_status (self, PK_STATUS_ENUM_SIG_CHECK);
 }
 
 static void
-pk_backend_transaction_setup (PkBackend *self)
+pk_backend_transaction_setup (PkBackendJob *self)
 {
 	g_return_if_fail (self != NULL);
 
-	pk_backend_set_status (self, PK_STATUS_ENUM_SETUP);
+	pk_backend_job_set_status (self, PK_STATUS_ENUM_SETUP);
 }
 
 static void
-pk_backend_transaction_repackaging (PkBackend *self)
+pk_backend_transaction_repackaging (PkBackendJob *self)
 {
 	g_return_if_fail (self != NULL);
 
-	pk_backend_set_status (self, PK_STATUS_ENUM_REPACKAGING);
+	pk_backend_job_set_status (self, PK_STATUS_ENUM_REPACKAGING);
 }
 
 static void
-pk_backend_transaction_download (PkBackend *self)
+pk_backend_transaction_download (PkBackendJob *self)
 {
 	g_return_if_fail (self != NULL);
 
-	pk_backend_set_status (self, PK_STATUS_ENUM_DOWNLOAD);
+	pk_backend_job_set_status (self, PK_STATUS_ENUM_DOWNLOAD);
 }
 
 static void
@@ -776,7 +777,7 @@ transaction_cancelled_cb (GCancellable *object, gpointer data)
 }
 
 gboolean
-pk_backend_transaction_initialize (PkBackend *self, alpm_transflag_t flags,
+pk_backend_transaction_initialize (PkBackendJob *self, alpm_transflag_t flags,
 				   GError **error)
 {
 	g_return_val_if_fail (self != NULL, FALSE);
@@ -953,7 +954,7 @@ alpm_fileconflict_free (gpointer conflict)
 }
 
 gboolean
-pk_backend_transaction_simulate (PkBackend *self, GError **error)
+pk_backend_transaction_simulate (PkBackendJob *self, GError **error)
 {
 	alpm_list_t *data = NULL;
 	gchar *prefix;
@@ -1013,7 +1014,7 @@ pk_backend_transaction_simulate (PkBackend *self, GError **error)
 }
 
 void
-pk_backend_transaction_packages (PkBackend *self)
+pk_backend_transaction_packages (PkBackendJob *self)
 {
 	const alpm_list_t *i;
 	PkInfoEnum info;
@@ -1039,7 +1040,7 @@ pk_backend_transaction_packages (PkBackend *self)
 		}
 	}
 
-	switch (pk_backend_get_role (self)) {
+	switch (pk_backend_job_get_role (self)) {
 		case PK_ROLE_ENUM_UPDATE_PACKAGES:
 			info = PK_INFO_ENUM_OBSOLETING;
 			break;
@@ -1079,7 +1080,7 @@ alpm_string_build_list (const alpm_list_t *i)
 }
 
 gboolean
-pk_backend_transaction_commit (PkBackend *self, GError **error)
+pk_backend_transaction_commit (PkBackendJob *self, GError **error)
 {
 	alpm_list_t *data = NULL;
 	gchar *prefix;
@@ -1091,8 +1092,8 @@ pk_backend_transaction_commit (PkBackend *self, GError **error)
 		return TRUE;
 	}
 
-	pk_backend_set_allow_cancel (self, FALSE);
-	pk_backend_set_status (self, PK_STATUS_ENUM_RUNNING);
+	pk_backend_job_set_allow_cancel (self, FALSE);
+	pk_backend_job_set_status (self, PK_STATUS_ENUM_RUNNING);
 
 	if (alpm_trans_commit (alpm, &data) >= 0) {
 		return TRUE;
@@ -1135,7 +1136,7 @@ pk_backend_transaction_commit (PkBackend *self, GError **error)
 }
 
 gboolean
-pk_backend_transaction_end (PkBackend *self, GError **error)
+pk_backend_transaction_end (PkBackendJob *self, GError **error)
 {
 	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (alpm != NULL, FALSE);
@@ -1165,7 +1166,7 @@ pk_backend_transaction_end (PkBackend *self, GError **error)
 }
 
 gboolean
-pk_backend_transaction_finish (PkBackend *self, GError *error)
+pk_backend_transaction_finish (PkBackendJob *self, GError *error)
 {
 	g_return_val_if_fail (self != NULL, FALSE);
 

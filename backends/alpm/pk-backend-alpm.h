@@ -44,6 +44,6 @@ void		 pk_backend_run		(PkBackendJob *self, PkStatusEnum status,
 
 void		 pk_backend_cancel	(PkBackend *backend, PkBackendJob *self);
 
-gboolean	 pk_backend_cancelled	(PkBackend *self);
+gboolean	 pk_backend_cancelled	(PkBackendJob *self);
 
-gboolean	 pk_backend_finish	(PkBackend *self, GError *error);
+gboolean	 pk_backend_finish	(PkBackendJob *self, GError *error);

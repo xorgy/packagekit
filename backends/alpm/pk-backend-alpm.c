@@ -398,7 +398,7 @@ pk_backend_cancel (PkBackend *backend, PkBackendJob *self)
 }
 
 gboolean
-pk_backend_cancelled (PkBackend *self)
+pk_backend_cancelled (PkBackendJob *self)
 {
 	gboolean cancelled;
 
@@ -415,13 +415,13 @@ pk_backend_cancelled (PkBackend *self)
 }
 
 gboolean
-pk_backend_finish (PkBackend *self, GError *error)
+pk_backend_finish (PkBackendJob *self, GError *error)
 {
 	gboolean cancelled = FALSE;
 
 	g_return_val_if_fail (self != NULL, FALSE);
 
-	pk_backend_set_allow_cancel (self, FALSE);
+	pk_backend_job_set_allow_cancel (self, FALSE);
 
 	g_static_mutex_lock (&mutex);
 
@@ -439,10 +439,10 @@ pk_backend_finish (PkBackend *self, GError *error)
 	}
 
 	if (cancelled) {
-		pk_backend_set_status (self, PK_STATUS_ENUM_CANCEL);
+		pk_backend_job_set_status (self, PK_STATUS_ENUM_CANCEL);
 	}
 
-	pk_backend_finished (self);
+	pk_backend_job_finished (self);
 	return (error == NULL);
 }
 
